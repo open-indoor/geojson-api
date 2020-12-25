@@ -3,49 +3,7 @@ kind: Kustomization
 commonLabels:
   app: openindoor
 images:
-  - name: openindoor/osm-api
-    newTag: 1.0.78
-  - name: openindoor/places-api
-    newTag: 2.0.44
   - name: openindoor/geojson-api
-    newTag: 2.0.29
-  - name: openindoor/mbtiles-api
-    newTag: 2.0.6
-  - name: openindoor/mbtiles-country-api
-    newTag: 2.0.9
-  - name: openindoor/tileserver-api
-    newTag: 1.0.36
-  - name: openindoor/front-api
-    newTag: 1.0.121
-  - name: openindoor/rastertiles-app
-    newTag: 1.0.10
-  - name: openindoor/fonts-app
-    newTag: 1.0.0
-  - name: openindoor/style-app
-    newTag: 2.0.13
-  - name: openindoor/mapbox-gl-openindoor
-    newTag: 2.0.7
-  - name: openindoor/mapbox-gl-js
-    newTag: 0.0.3
-  - name: openindoor/sprite-app
-    newTag: 1.0.22
-  - name: openindoor/map-app
-    newTag: 2.0.22
-  - name: openindoor/front-app
-    newTag: 1.0.19
+    newTag: latest
 resources:
-- osm-api.yaml
-- places-api.yaml
 - geojson-api.yaml
-- mbtiles-api.yaml
-- mbtiles-country-api.yaml
-- tileserver-api.yaml
-- front-api.yaml
-- rastertiles-app.yaml
-- fonts-app.yaml
-- style-app.yaml
-- mapbox-gl-openindoor.yaml
-- mapbox-gl-js.yaml
-- sprite-app.yaml
-- map-app.yaml
-- front-app.yaml
