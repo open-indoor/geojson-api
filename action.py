@@ -64,9 +64,12 @@ def within(geojson_file, bounds_file):
     )
     geojson_filtered_gdf = geojson_filtered_gdf[
         geojson_filtered_gdf.id_bounds.notnull()
-    ].drop(
-        columns=['country', 'place', 'town', 'update']
-    ).drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
+    ].drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
+
+    # print(geojson_filtered_gdf.head)
+    # .drop(
+    #     columns=['country', 'place', 'town', 'update']
+    # ).drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
 
     # .drop(
     #     ['country', 'place', 'town', 'update']
