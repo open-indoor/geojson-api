@@ -28,15 +28,23 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       net-tools \
       npm nodejs \
       procps \
-      python3-geopandas \
-      python3-geojson \
-      python3-pycurl \
-      python3-pip \
       unzip \
       util-linux \
       uuid-runtime \
       vim \
       wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y update \
+    && apt-get -y install \
+      --no-install-recommends \
+      python3-geopandas \
+      python3-geojson \
+      python3-pycurl \
+      python3-pip \
+      python3-rtree \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

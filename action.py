@@ -10,6 +10,8 @@ import geopandas
 import io
 from shapely.geometry import shape
 import geojson
+import getopt
+import sys
 
 myUuid = str(uuid.uuid4())
 
@@ -50,18 +52,18 @@ def getOsm(country, place, myUuid):
     print('osmFile: ' + osmFile)
     return osmFile
 
-def intersects_02(geojsonFile, boundsFile):
-    geojsonGpd = geopandas.read_file(geojsonFile)
-    print('geojson to clip: ' + geojsonFile)
-    print(geojsonGpd)
-    boundsGpd = geopandas.read_file(boundsFile)
-    # boundsGpd = boundsGpd.buffer(100)
-    print('boundingFile: ' + boundsFile)
-    print(boundsGpd)
-    # geojsonFilteredGpd = geopandas.clip(geojsonGpd, boundsGpd, keep_geom_type=True)
-    # geojsonFilteredGpd = geopandas.overlay(geojsonGpd, boundsGpd, how='intersection')
-    geojsonFilteredGpd = geopandas.overlay(boundsGpd, geojsonGpd, how='intersection')
-    geojsonFilteredGpd.to_file(geojsonGpd, driver='GeoJSON')
+def intersects_02(geojson_file, bounds_file):
+    geojson_filtered_gdf = geopandas.sjoin(
+            geopandas.read_file(geojson_file),
+            geopandas.read_file(bounds_file),
+            how='left',
+            op='within',
+            lsuffix='openindoor',
+            rsuffix='bounds'
+    )
+    geojson_filtered_gdf = geojson_filtered_gdf.rename(columns={'id_bounds': 'openindoor:id'})
+    with open(geojson_file, 'w') as outfile:
+        outfile.write(geojson_filtered_gdf.to_json(na='drop'))
 
 def intersects_01(geojsonFile, boundsFile):
     print('File to clean up:' + geojsonFile + ' with ' + boundsFile)
@@ -79,8 +81,10 @@ def intersects_01(geojsonFile, boundsFile):
         "generator": "JOSM",
         "features":  []
     }
+    placeId = boundsGeojson['features'][0]['properties']['id']
     for feature in placeJson['features']:
         # print('feature to add:' + json.dumps(feature))
+        feature['properties']['openindoor:id'] = placeId
         gj = geojson.Feature(feature)
         gj.errors()
         # print('feature validated')
@@ -94,9 +98,8 @@ def intersects_01(geojsonFile, boundsFile):
     print('Going to write clean file')
     with open(geojsonFile, 'w') as outfile:
         json.dump(cleanPlace, outfile)
-    
 
-def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
+def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None, intersect = 1):
     cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
     print('start cmd: ' + cmd)
     os.system(cmd)
@@ -131,12 +134,15 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
             feature['id'] = featureId
             if (not 'properties' in feature):
                 feature['properties'] = {}
-            feature['properties']['openindoor:id'] = placeId
             feature['properties']['feature_id'] = featureId
     with open(geojsonFile, 'w') as outfile:
         json.dump(myGeojson, outfile)
     if (boundsFile != None):
-        intersects_01(geojsonFile, boundsFile)
+        if (intersect == 1):
+            intersects_01(geojsonFile, boundsFile)
+        else:
+            intersects_02(geojsonFile, boundsFile)
+
         # intersects_02(geojsonFile, boundsFile)
         # geojsonGpd = geopandas.read_file(geojsonFile)
         # print('geojson to clip: ' + geojsonFile)
@@ -163,47 +169,82 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     # print(selection.to_json(na='drop'))
     # print(place.to_json(na='drop'))
 
-pipeDir = '/tmp/geojsonPipe'
-os.makedirs(pipeDir, exist_ok=True)
-for country in os.listdir(pipeDir):
-    print('country: ' + country)
-    for boundsFile in os.listdir('/tmp/geojsonPipe/' + country):
-        pipeFile = '/tmp/geojsonPipe/' + country + '/' + boundsFile
-        print('boundsFile: ' + boundsFile)
-        if not boundsFile.endswith("_bounds.geojson"):
-            continue
-        # Get bounds
-        place = re.sub('_bounds\.geojson$', '', boundsFile)
-        print('place: ' + place)
-        cksum = getChecksum(country, place)
-        if cksum == None:
-            continue
-        print('cksum: ' + cksum)
-        geojsonFile = '/tmp/geojson/' + country + '/' + place + '_' + cksum + '.geojson'
-        if os.path.isfile(geojsonFile):
-            os.remove(pipeFile)
-            continue
-        # Create geojson
-        osmFile = getOsm(country, place, myUuid)
-        if osmFile == None:
-            continue
+# sys.argv
 
-        print('osmFile: ' + str(osmFile))
-        geojsonFileTmp = '/tmp/geojson/' + country + '/' + place + '_' + myUuid + '.geojson'
-        print('geojsonFileTmp: ' + geojsonFileTmp)
-        # mkdir basename geojsonFile
-        os.makedirs(os.path.dirname(geojsonFile), exist_ok=True)
-        osmToGeojson(place, osmFile, geojsonFileTmp, pipeFile)
-        os.remove(pipeFile)
-        os.rename(geojsonFileTmp, geojsonFile)
-        print('geojsonFile: ' + geojsonFile)
-        dst = '/tmp/geojson/' + country + '/' + place + '.geojson'
-        dst2 = '/tmp/geojson/' + country + '/' + place
-        if os.path.exists(dst):
-            os.remove(dst)
-        if os.path.exists(dst2):
-            os.remove(dst2)
-        os.symlink(geojsonFile, dst) 
-        os.symlink(geojsonFile, dst2)
-        print('dst: ' + dst)
-        print('dst2: ' + dst2)
+
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "ti:", ["test", "intersect="])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(err)  # will print something like "option -a not recognized"
+        sys.exit(2)
+    test = False
+    intersect = 2
+    for o, a in opts:
+        if o in ("-t", "--test"):
+            test = True
+        elif o in ("-i", "--intersect"):
+            intersect = int(a)
+        else:
+            print(o)
+            print(a)
+            assert False, "unhandled option"
+    if test:
+        print("test")
+        place = 'BulgariaHaskovoXackoboGeorgiKirkovStreet'
+        osmFile = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet.osm'
+        geojsonFileTmp = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet.geojson'
+        pipeFile = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet_bounds.geojson'
+        osmToGeojson(place, osmFile, geojsonFileTmp, pipeFile, intersect)
+        sys.exit()
+
+    pipeDir = '/tmp/geojsonPipe'
+    os.makedirs(pipeDir, exist_ok=True)
+    for country in os.listdir(pipeDir):
+        print('country: ' + country)
+        for boundsFile in os.listdir('/tmp/geojsonPipe/' + country):
+            pipeFile = '/tmp/geojsonPipe/' + country + '/' + boundsFile
+            print('boundsFile: ' + boundsFile)
+            if not boundsFile.endswith("_bounds.geojson"):
+                continue
+            # Get bounds
+            place = re.sub('_bounds\.geojson$', '', boundsFile)
+            print('place: ' + place)
+            cksum = getChecksum(country, place)
+            if cksum == None:
+                continue
+            print('cksum: ' + cksum)
+            geojsonFile = '/tmp/geojson/' + country + '/' + place + '_' + cksum + '.geojson'
+            if os.path.isfile(geojsonFile):
+                os.remove(pipeFile)
+                continue
+            # Create geojson
+            osmFile = getOsm(country, place, myUuid)
+            if osmFile == None:
+                continue
+
+            print('osmFile: ' + str(osmFile))
+            geojsonFileTmp = '/tmp/geojson/' + country + '/' + place + '_' + myUuid + '.geojson'
+            print('geojsonFileTmp: ' + geojsonFileTmp)
+            # mkdir basename geojsonFile
+            os.makedirs(os.path.dirname(geojsonFile), exist_ok=True)
+            osmToGeojson(place, osmFile, geojsonFileTmp, pipeFile)
+            os.remove(pipeFile)
+            os.rename(geojsonFileTmp, geojsonFile)
+            print('geojsonFile: ' + geojsonFile)
+            dst = '/tmp/geojson/' + country + '/' + place + '.geojson'
+            dst2 = '/tmp/geojson/' + country + '/' + place
+            if os.path.exists(dst):
+                os.remove(dst)
+            if os.path.exists(dst2):
+                os.remove(dst2)
+            os.symlink(geojsonFile, dst) 
+            os.symlink(geojsonFile, dst2)
+            print('dst: ' + dst)
+            print('dst2: ' + dst2)
+
+
+if __name__ == "__main__":
+    main()
