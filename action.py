@@ -52,54 +52,39 @@ def getOsm(country, place, myUuid):
     print('osmFile: ' + osmFile)
     return osmFile
 
-def intersects_02(geojson_file, bounds_file):
+def within(geojson_file, bounds_file):
+    bounds_gdf = geopandas.read_file(bounds_file)
+    geojson_gdf = geopandas.read_file(geojson_file)
+    # geojson_filtered_gdf = geopandas.overlay(geojson_gdf, bounds_gdf,)
     geojson_filtered_gdf = geopandas.sjoin(
-            geopandas.read_file(geojson_file),
-            geopandas.read_file(bounds_file),
+            geojson_gdf,
+            bounds_gdf,
             how='left',
-            op='within',
-            lsuffix='openindoor',
             rsuffix='bounds'
     )
+    geojson_filtered_gdf = geojson_filtered_gdf[
+        geojson_filtered_gdf.id_bounds.notnull()
+    ].drop(
+        columns=['country', 'place', 'town', 'update']
+    ).drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
+
+    # .drop(
+    #     ['country', 'place', 'town', 'update']
+    # ).filter(regex='!(_bounds$)',axis=1)
+    # geojson_filtered_gdf = geopandas.clip(
+    #     geojson_gdf,
+    #     bounds_gdf,
+    #     keep_geom_type=True
+    # )
+    
+    # rtx_autocad_filtered = rtx_autocad[rtx_autocad['Layer'].map(lambda layer: layer in layer_filter)]
+
     geojson_filtered_gdf = geojson_filtered_gdf.rename(columns={'id_bounds': 'openindoor:id'})
+    geojson_filtered_gdf['openindoor:id'] = bounds_gdf.iloc[0].id
     with open(geojson_file, 'w') as outfile:
         outfile.write(geojson_filtered_gdf.to_json(na='drop'))
 
-def intersects_01(geojsonFile, boundsFile):
-    print('File to clean up:' + geojsonFile + ' with ' + boundsFile)
-    with open(geojsonFile) as json_file:
-        placeJson = json.load(json_file)
-    with open(boundsFile) as json_file:
-        boundsGeojson = json.load(json_file)
-    if len(boundsGeojson['features']) == 0:
-        print('no bounds detected')
-        return
-    boundsJson = boundsGeojson['features'][0]['geometry']
-    boundsShp = shape(boundsJson)
-    cleanPlace = {
-            "type": "FeatureCollection",
-        "generator": "JOSM",
-        "features":  []
-    }
-    placeId = boundsGeojson['features'][0]['properties']['id']
-    for feature in placeJson['features']:
-        # print('feature to add:' + json.dumps(feature))
-        feature['properties']['openindoor:id'] = placeId
-        gj = geojson.Feature(feature)
-        gj.errors()
-        # print('feature validated')
-
-        featureShp = shape(feature['geometry'])
-        try:
-            if boundsShp.intersects(featureShp):
-                cleanPlace['features'].append(feature)
-        except Exception:
-            pass  # or you could use 'continue'
-    print('Going to write clean file')
-    with open(geojsonFile, 'w') as outfile:
-        json.dump(cleanPlace, outfile)
-
-def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None, intersect = 1):
+def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
     print('start cmd: ' + cmd)
     os.system(cmd)
@@ -138,66 +123,35 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None, intersect = 1
     with open(geojsonFile, 'w') as outfile:
         json.dump(myGeojson, outfile)
     if (boundsFile != None):
-        if (intersect == 1):
-            intersects_01(geojsonFile, boundsFile)
-        else:
-            intersects_02(geojsonFile, boundsFile)
-
-        # intersects_02(geojsonFile, boundsFile)
-        # geojsonGpd = geopandas.read_file(geojsonFile)
-        # print('geojson to clip: ' + geojsonFile)
-        # print(geojsonGpd)
-        # boundsGpd = geopandas.read_file(boundsFile)
-        # boundsGpd = boundsGpd.buffer(100)
-        # print('boundingFile: ' + boundsFile)
-        # print(boundsGpd)
-        # geojsonFilteredGpd = geopandas.clip(geojsonGpd, boundsGpd, keep_geom_type=True)
-        # geojsonFilteredGpd.to_file(geojsonGpd, driver='GeoJSON')
-
-
-
-    # shapely.geometry.Polygon
-
-    # print(json.dumps(geojson))
-    # geojsonIo = io.StringIO(json.dumps(geojson))
-    # print('geopandasize...')
-    # place = geopandas.read_file(geojsonIo)
-    # print('geopandasizes !')
-    # file = open(placeFile)
-    # bounds = geopandas.read_file(file)
-    # selection = geopandas.clip(place, bounds, True)
-    # print(selection.to_json(na='drop'))
-    # print(place.to_json(na='drop'))
-
-# sys.argv
-
-
+        within(geojsonFile, boundsFile)
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ti:", ["test", "intersect="])
+        opts, args = getopt.getopt(sys.argv[1:], "tc:i:", ["test", "country=", "id="])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
         sys.exit(2)
     test = False
-    intersect = 2
+    place = 'BulgariaHaskovoXackoboGeorgiKirkovStreet'
+    country = 'bulgaria'
     for o, a in opts:
         if o in ("-t", "--test"):
             test = True
-        elif o in ("-i", "--intersect"):
-            intersect = int(a)
+        elif o in ("-c", "--country"):
+            country = a
+        elif o in ("-i", "--id"):
+            place = a
         else:
             print(o)
             print(a)
             assert False, "unhandled option"
     if test:
         print("test")
-        place = 'BulgariaHaskovoXackoboGeorgiKirkovStreet'
-        osmFile = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet.osm'
-        geojsonFileTmp = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet.geojson'
-        pipeFile = '/data/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet_bounds.geojson'
-        osmToGeojson(place, osmFile, geojsonFileTmp, pipeFile, intersect)
+        osmFile = '/data/' + country + '/' + place + '.osm'
+        geojsonFileTmp = '/data/' + country + '/' + place + '.geojson'
+        pipeFile = '/data/' + country + '/' + place + '_bounds.geojson'
+        osmToGeojson(place, osmFile, geojsonFileTmp, pipeFile)
         sys.exit()
 
     pipeDir = '/tmp/geojsonPipe'

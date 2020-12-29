@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PATH_INFO="trigger/bulgaria/BulgariaHaskovoXackoboGeorgiKirkovStreet" /geojson/geojson
 mkdir -p /tmp/geojsonPipe/
-# action --test --intersect=1
-action --test
+action --test --country="bulgaria" --id="BulgariaHaskovoXackoboGeorgiKirkovStreet"
+action --test --country="france" --id="FranceRennesCFMIRennes2LaPresidence"
+action --test --country="france" --id="FranceRennesCFMIRennes2BatS"
