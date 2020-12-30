@@ -55,37 +55,15 @@ def getOsm(country, place, myUuid):
 def within(geojson_file, bounds_file):
     bounds_gdf = geopandas.read_file(bounds_file)
     geojson_gdf = geopandas.read_file(geojson_file)
-    # geojson_filtered_gdf = geopandas.overlay(geojson_gdf, bounds_gdf,)
-    geojson_filtered_gdf = geopandas.sjoin(
-            geojson_gdf,
-            bounds_gdf,
-            how='left',
-            rsuffix='bounds'
-    )
-    geojson_filtered_gdf = geojson_filtered_gdf[
-        geojson_filtered_gdf.id_bounds.notnull()
-    ].drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
-
-    # print(geojson_filtered_gdf.head)
-    # .drop(
-    #     columns=['country', 'place', 'town', 'update']
-    # ).drop(geojson_filtered_gdf.filter(regex='.*_bounds$').columns, axis=1)
-
-    # .drop(
-    #     ['country', 'place', 'town', 'update']
-    # ).filter(regex='!(_bounds$)',axis=1)
-    # geojson_filtered_gdf = geopandas.clip(
-    #     geojson_gdf,
-    #     bounds_gdf,
-    #     keep_geom_type=True
-    # )
-    
-    # rtx_autocad_filtered = rtx_autocad[rtx_autocad['Layer'].map(lambda layer: layer in layer_filter)]
-
-    geojson_filtered_gdf = geojson_filtered_gdf.rename(columns={'id_bounds': 'openindoor:id'})
-    geojson_filtered_gdf['openindoor:id'] = bounds_gdf.iloc[0].id
+    geojson_gdf['openindoor:id'] = bounds_gdf.iloc[0].id
     with open(geojson_file, 'w') as outfile:
-        outfile.write(geojson_filtered_gdf.to_json(na='drop'))
+        outfile.write(
+            geojson_gdf[
+                geojson_gdf['geometry'].intersects(
+                    bounds_gdf['geometry'][0]
+                )
+            ].to_json(na='drop')
+        )
 
 def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
