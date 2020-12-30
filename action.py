@@ -67,10 +67,15 @@ def within(geojson_file, bounds_file):
 
 def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
-    print('start cmd: ' + cmd)
+    print('starting cmd: ' + cmd)
     os.system(cmd)
     print('cmd done.')
-    print('alter geojson: ' + geojsonFile)
+    print('filtering geojson: ' + geojsonFile)
+    # Filtering
+    if (boundsFile != None):
+        within(geojsonFile, boundsFile)
+    print('altering geojson: ' + geojsonFile)
+    # Fixing
     with open(geojsonFile) as json_file:
         myGeojson = json.load(json_file)
         # filter on id field
@@ -103,8 +108,7 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
             feature['properties']['feature_id'] = featureId
     with open(geojsonFile, 'w') as outfile:
         json.dump(myGeojson, outfile)
-    if (boundsFile != None):
-        within(geojsonFile, boundsFile)
+
 
 def main():
     try:
