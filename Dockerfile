@@ -50,7 +50,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g osmtogeojson
+# RUN npm install -g osmtogeojson
 
 COPY ./requirements.txt /geojson/
 RUN pip3 install -v -r /geojson/requirements.txt
