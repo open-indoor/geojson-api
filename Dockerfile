@@ -47,17 +47,17 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       python3-pip \
       python3-rtree \
       python3-pyosmium \
+      python3-requests \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # RUN npm install -g osmtogeojson
 
+RUN mkdir -p /geojson
 COPY ./requirements.txt /geojson/
 RUN pip3 install -v -r /geojson/requirements.txt
 
 COPY ./Caddyfile /etc/caddy/Caddyfile
-
-RUN mkdir -p /geojson
 
 WORKDIR /geojson
 

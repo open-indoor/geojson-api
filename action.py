@@ -53,28 +53,30 @@ def getOsm(country, place, myUuid):
     print('osmFile: ' + osmFile)
     return osmFile
 
-def within(geojson_file, bounds_file):
-    print("Opening bounds file: " + bounds_file)
-    bounds_gdf = geopandas.read_file(bounds_file)
-    print("Opening geosjon input file: " + geojson_file)
-    geojson_gdf = geopandas.read_file(geojson_file)
-    print("Setting place id: " + bounds_gdf.iloc[0].id)
-    geojson_gdf['openindoor:id'] = bounds_gdf.iloc[0].id
-    print("Filtering on intersection...")
-    geojson_gdf = geojson_gdf[
-        geojson_gdf.loc[:, ('geometry')].intersects(
-            bounds_gdf.loc[0, ('geometry')]
-        )
-    ]
-    print("saving " + geojson_file)
-    with open(geojson_file, 'w') as outfile:
-        outfile.write(geojson_gdf.to_json(na='drop'))
+# def within(geojson_file, bounds_file):
+#     print("Opening bounds file: " + bounds_file)
+#     bounds_gdf = geopandas.read_file(bounds_file)
+#     print("Opening geosjon input file: " + geojson_file)
+#     geojson_gdf = geopandas.read_file(geojson_file)
+#     print("Setting place id: " + bounds_gdf.iloc[0].id)
+#     geojson_gdf['openindoor:id'] = bounds_gdf.iloc[0].id
+#     print("Filtering on intersection...")
+#     geojson_gdf = geojson_gdf[
+#         geojson_gdf.loc[:, ('geometry')].intersects(
+#             bounds_gdf.loc[0, ('geometry')]
+#         )
+#     ]
+#     print("saving " + geojson_file)
+#     with open(geojson_file, 'w') as outfile:
+#         outfile.write(geojson_gdf.to_json(na='drop'))
 
 def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     print('starting osm -> geojson...')
 
     # cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
     # cmd = ('somium cat -f osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
+    #  + ' -p ' + boundsFile
+    # cmd = ('osmium extract -p ' + boundsFile + ' + osmFile + ' -f osm -F osm -o ' + osmFile + '_')
     cmd = ('osmium export ' + osmFile + ' -f geojson  > ' + geojsonFile)
     print('starting cmd: ' + cmd)
     os.system(cmd)
@@ -86,10 +88,10 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
 
     print('cmd done.')
 
-    print('filtering geojson with bounds: ' + geojsonFile)
+    # print('filtering geojson with bounds: ' + geojsonFile)
     # Filtering
-    if (boundsFile != None):
-        within(geojsonFile, boundsFile)
+    # if (boundsFile != None):
+    #     within(geojsonFile, boundsFile)
     # print('altering geojson: ' + geojsonFile)
     # Fixing
     # geojson_gdf = geopandas.read_file(geojsonFile)
