@@ -59,8 +59,8 @@ def within(geojson_file, bounds_file):
     with open(geojson_file, 'w') as outfile:
         outfile.write(
             geojson_gdf[
-                geojson_gdf['geometry'].intersects(
-                    bounds_gdf['geometry'][0]
+                geojson_gdf.loc[:, ('geometry')].intersects(
+                    bounds_gdf.loc[0, ('geometry')]
                 )
             ].to_json(na='drop')
         )
@@ -70,12 +70,21 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     print('starting cmd: ' + cmd)
     os.system(cmd)
     print('cmd done.')
-    print('filtering geojson: ' + geojsonFile)
+    # print('filtering geojson: ' + geojsonFile)
     # Filtering
     if (boundsFile != None):
         within(geojsonFile, boundsFile)
-    print('altering geojson: ' + geojsonFile)
+    # print('altering geojson: ' + geojsonFile)
     # Fixing
+    # geojson_gdf = geopandas.read_file(geojsonFile)
+    # geojson_building_gdf = geojson_gdf[geojson_gdf['building:part'].notnull() | geojson_gdf['building'].notnull()]
+    # geojson_building_gdf.to_file(geojsonFile, driver = 'GeoJSON')
+    # with open(geojsonFile, 'w') as outfile:
+    #     outfile.write(geojson_building_gdf.to_json(na='drop'))
+    # exit(0)
+    # geojson_building_gdf = geojson_gdf[geojson_gdf.loc[:, ('building')].notnull()]
+    # geojson_building_no_height_gdf = geojson_gdf[geojson_gdf.loc[:, ('height')].notnull()]
+
     with open(geojsonFile) as json_file:
         myGeojson = json.load(json_file)
         # filter on id field
