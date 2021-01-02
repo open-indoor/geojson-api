@@ -12,6 +12,7 @@ from shapely.geometry import shape
 import geojson
 import getopt
 import sys
+import osmium
 
 myUuid = str(uuid.uuid4())
 
@@ -66,10 +67,21 @@ def within(geojson_file, bounds_file):
         )
 
 def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
-    cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
+    print('starting osm -> geojson...')
+
+    # cmd = ('osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
+    # cmd = ('somium cat -f osmtogeojson -m ' + osmFile + ' > ' + geojsonFile)
+    cmd = ('osmium export ' + osmFile + ' -f geojson  > ' + geojsonFile)
     print('starting cmd: ' + cmd)
     os.system(cmd)
+
+    # infile = osmium.osmFile(b'osmFile')
+    # outfile = osmium.osmFile(b'geojsonFile')
+    # handler = outfile.create_output_file()
+    # infile.read(handler)
+
     print('cmd done.')
+
     # print('filtering geojson: ' + geojsonFile)
     # Filtering
     if (boundsFile != None):

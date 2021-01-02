@@ -27,6 +27,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       less \
       net-tools \
       npm nodejs \
+      osmium-tool \
       procps \
       unzip \
       util-linux \
@@ -45,6 +46,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
       python3-pycurl \
       python3-pip \
       python3-rtree \
+      python3-pyosmium \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
