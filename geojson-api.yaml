@@ -40,3 +40,10 @@ spec:
         name: geojson-api
         ports:
         - containerPort: 80
+        resources:
+          limits:
+            memory: "800Mi"
+            cpu: "0.5"
+          requests:
+            memory: "400Mi"
+            cpu: "0.25"
