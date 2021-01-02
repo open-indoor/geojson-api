@@ -15,3 +15,15 @@ trigger: https://api-sandbox.openindoor.io/geojson/trigger/france/FranceParisGar
 data: https://api-sandbox.openindoor.io/geojson/data/france/FranceParisGareDeLEst.geojson
 
 ## Development
+
+```
+docker build \
+    --label openindoor/geojson-api \
+    -t openindoor/geojson-api .
+
+docker run \
+    -v $(pwd)/test/data:/data \
+    -v $(pwd)/test/test.sh:/geojson/test \
+    -it openindoor/geojson-api \
+    /geojson/test
+```
