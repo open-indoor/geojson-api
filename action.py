@@ -116,29 +116,29 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
 
         # myGeojson['features'] = [feature for feature in myGeojson['features'] if 'id' in feature]
 
-        regMulti = re.compile(r'^(-?\d+\.?\d*).*;(-?\d+\.?\d*)$')
-        regMinus = re.compile(r'^(-?\d+\.?\d*)-(-?\d+\.?\d*)$')
-        for feature in myGeojson['features']:
-            # del feature['id']
-#            if ((not 'id' in feature) or (not feature['id'])):
-            if (('properties' in feature) and ('level' in feature['properties'])):
-                level = feature['properties']['level']
-                level = level.replace('--', '-')
-                level = level.replace(':', ';')
-                level = regMulti.sub(r'\1;\2', level)
-                level = regMinus.sub(r'\1;\2', level)
-                if (regMulti.match(level)):
-                    num1 = float(regMulti.sub(r'\1', level))
-                    num2 = float(regMulti.sub(r'\2', level))
-                    if (num1 > num2):
-                        level = regMulti.sub(r'\2;\1', level)
-                feature['properties']['level'] = level
-            feature['openindoor:id'] = placeId
-            featureId = (uuid.uuid4().int % (2**32))
-            feature['id'] = featureId
-            if (not 'properties' in feature):
-                feature['properties'] = {}
-            feature['properties']['feature_id'] = featureId
+    regMulti = re.compile(r'^(-?\d+\.?\d*).*;(-?\d+\.?\d*)$')
+    regMinus = re.compile(r'^(-?\d+\.?\d*)-(-?\d+\.?\d*)$')
+    for feature in myGeojson['features']:
+        # del feature['id']
+        if (('properties' in feature) and ('level' in feature['properties'])):
+            level = feature['properties']['level']
+            level = level.replace('--', '-')
+            level = level.replace(':', ';')
+            level = regMulti.sub(r'\1;\2', level)
+            level = regMinus.sub(r'\1;\2', level)
+            if (regMulti.match(level)):
+                num1 = float(regMulti.sub(r'\1', level))
+                num2 = float(regMulti.sub(r'\2', level))
+                if (num1 > num2):
+                    level = regMulti.sub(r'\2;\1', level)
+            feature['properties']['level'] = level
+        # print('placeId: ' + placeId)
+        feature['openindoor:id'] = placeId
+        featureId = (uuid.uuid4().int % (2**32))
+        feature['id'] = featureId
+        if (not 'properties' in feature):
+            feature['properties'] = {}
+        feature['properties']['feature_id'] = featureId
     print("Saving file: " + geojsonFile)
     with open(geojsonFile, 'w') as outfile:
         json.dump(myGeojson, outfile)
