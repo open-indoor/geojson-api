@@ -13,6 +13,7 @@ import geojson
 import getopt
 import sys
 import osmium
+from subprocess import Popen, PIPE, STDOUT
 
 myUuid = str(uuid.uuid4())
 
@@ -79,7 +80,11 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
     # cmd = ('osmium extract -p ' + boundsFile + ' + osmFile + ' -f osm -F osm -o ' + osmFile + '_')
     cmd = ('osmium export ' + osmFile + ' -f geojson  > ' + geojsonFile)
     print('starting cmd: ' + cmd)
-    os.system(cmd)
+    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    output = p.stdout.read()
+    print(output)
+
+    # os.system(cmd)
 
     # infile = osmium.osmFile(b'osmFile')
     # outfile = osmium.osmFile(b'geojsonFile')
@@ -109,7 +114,7 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
         # filter on id field
         # myGeojson['features'] = dict(filter(lambda feature: 'id' in feature, myGeojson['features'].items()))
 
-        myGeojson['features'] = [feature for feature in myGeojson['features'] if 'id' in feature]
+        # myGeojson['features'] = [feature for feature in myGeojson['features'] if 'id' in feature]
 
         regMulti = re.compile(r'^(-?\d+\.?\d*).*;(-?\d+\.?\d*)$')
         regMinus = re.compile(r'^(-?\d+\.?\d*)-(-?\d+\.?\d*)$')
@@ -128,7 +133,7 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
                     if (num1 > num2):
                         level = regMulti.sub(r'\2;\1', level)
                 feature['properties']['level'] = level
-            # feature['place'] = placeId
+            feature['openindoor:id'] = placeId
             featureId = (uuid.uuid4().int % (2**32))
             feature['id'] = featureId
             if (not 'properties' in feature):
