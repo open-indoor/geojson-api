@@ -133,11 +133,11 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
                     level = regMulti.sub(r'\2;\1', level)
             feature['properties']['level'] = level
         # print('placeId: ' + placeId)
-        feature['openindoor:id'] = placeId
         featureId = (uuid.uuid4().int % (2**32))
         feature['id'] = featureId
         if (not 'properties' in feature):
             feature['properties'] = {}
+        feature['properties']['openindoor:id'] = placeId
         feature['properties']['feature_id'] = featureId
     print("Saving file: " + geojsonFile)
     with open(geojsonFile, 'w') as outfile:
