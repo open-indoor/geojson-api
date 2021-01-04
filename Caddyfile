@@ -12,6 +12,11 @@
         respond @404 "File not found."
     }
 
+    handle_path /geojson/private_data/* {
+        root * /private_data
+        file_server browse
+    }
+
     handle_path /geojson/data/* {
         root * /tmp/geojson
         file_server browse

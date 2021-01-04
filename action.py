@@ -141,7 +141,7 @@ def osmToGeojson(placeId, osmFile, geojsonFile, boundsFile = None):
         feature['properties']['feature_id'] = featureId
     print("Saving file: " + geojsonFile)
     with open(geojsonFile, 'w') as outfile:
-        json.dump(myGeojson, outfile)
+        json.dump(myGeojson, outfile, ensure_ascii=False)
 
 
 def main():
